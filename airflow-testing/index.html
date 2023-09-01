@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<title>A journey to faster feedback on Airflow</title>
+
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><link rel="stylesheet" href="/reveal-js/dist/reset.css">
+<link rel="stylesheet" href="/reveal-js/dist/reveal.css"><link rel="stylesheet" href="/reveal-hugo/themes/robot-lung.css" id="theme"><link rel="stylesheet" href="/highlight-js/default.min.css">
+  </head>
+  <body>
+    
+    <div class="reveal">
+      <div class="slides">
+  
+
+    <section></section><section>
+<h1 id="a-journey-to-faster-feedback-on-airflow">A journey to faster feedback on Airflow</h1>
+<h3 id="discovery-of-airflows-test-pyramid">Discovery of Airflow’s test pyramid</h3>
+<p><a href="https://karun.me">Karun Japhet</a> | <a href="https://twitter.com/javatarz">@javatarz</a></p>
+</section><section>
+<h1 id="who-am-i">Who am I?</h1>
+<p>Background for context 😄</p>
+</section><section>
+<p>Solution consultant at
+<img src="sahaj-logo-white-grey.svg" alt="Sahaj Logo"></p>
+</section><section>
+<p><small>(Former)</small> JVM Jedi</p>
+<p><img src="jedi-master.jpg" alt="Jedi Master"></p>
+</section><section>
+<p>I <del>am</del> was not</p>
+<p><img src="python-powered.png" alt=""></p>
+</section><section>
+<p>Safety nets are essential
+<img src="safety-nets.png" alt=""></p>
+</section><section>
+<h1 id="what-is">What is</h1>
+<p><img src="airflow-logo-with-wordmark.png" alt=""></p>
+</section><section>
+<h2 id="a-short-introduction">A short introduction</h2>
+<p>A batch workflow orchestration platform</p>
+<ul>
+<li>Create, monitor and schedule workflows as DAGs</li>
+<li>Python 🐍 for defining workflows as code</li>
+</ul>
+</section><section>
+<h2 id="dag-as-code">DAG as code</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="nohighlight" data-noescape><span style="display:flex;"><span><span style="color:#f92672">from</span> datetime <span style="color:#f92672">import</span> datetime
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> airflow <span style="color:#f92672">import</span> DAG
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> airflow.decorators <span style="color:#f92672">import</span> task
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> airflow.operators.bash <span style="color:#f92672">import</span> BashOperator
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># A DAG represents a workflow, a collection of tasks</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">with</span> DAG(dag_id<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;demo&#34;</span>, start_date<span style="color:#f92672">=</span>datetime(<span style="color:#ae81ff">2022</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>), schedule<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0 0 * * *&#34;</span>) <span style="color:#66d9ef">as</span> dag:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Tasks are represented as operators</span>
+</span></span><span style="display:flex;"><span>    hello <span style="color:#f92672">=</span> BashOperator(task_id<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;hello&#34;</span>, bash_command<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;echo hello&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@task</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">airflow</span>():
+</span></span><span style="display:flex;"><span>        print(<span style="color:#e6db74">&#34;airflow&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Set dependencies between tasks</span>
+</span></span><span style="display:flex;"><span>    hello <span style="color:#f92672">&gt;&gt;</span> airflow()
+</span></span></code></pre></div></section><section>
+<h2 id="workflow-as-a-dag">Workflow as a DAG</h2>
+<p><img src="airflow-dag.png" alt=""></p>
+</section><section>
+<h2 id="monitoring-a-dag">Monitoring a DAG</h2>
+<p><img src="airflow-monitoring.png" alt=""></p>
+</section><section>
+<h1 id="our-usage-of-airflow">Our usage of airflow</h1>
+<p>TODO: insert image explaining the relationship between Airflow as an orchestrator managing our data pipelines and parts of our data lake.</p>
+</section><section>
+<h1 id="the-journey">The journey</h1>
+<p>Recapping the learnings from the past couple of years in this space</p>
+</section><section>
+<h2 id="nightmare-of-no-safety-nets">Nightmare of no safety nets</h2>
+<p><img src="this-is-fine-dog-meme.png" alt=""></p>
+</section><section>
+<h2 id="splitting-the-codebase">Splitting the codebase</h2>
+<ul>
+<li>⚠️ Writing automated tests for DAGs directly was hard</li>
+<li>⌨️ We split the &ldquo;logic&rdquo; out into <code>utilities</code></li>
+<li>🟢 Strong unit tests for <code>utilities</code></li>
+<li>🟡 Airflow DAGs, operations and any related functionality didn&rsquo;t have tests at this stage</li>
+</ul>
+</section><section>
+<h2 id="plague-of-misconfiguration">Plague of misconfiguration</h2>
+<ul>
+<li>Accidentally ran child DAGs &ldquo;before&rdquo; parents</li>
+<li>Delays the entire process by over a week</li>
+<li>Order of tasks was accidentally broken at times and we didn&rsquo;t realize it</li>
+</ul>
+</section><section>
+<h2 id="automating-airflow-tests">Automating airflow tests</h2>
+<ol>
+<li>Manually created database</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="nohighlight" data-noescape><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">pytest_configure</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">None</span>:  
+</span></span><span style="display:flex;"><span>    target <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;./unittests.db&#39;</span>  
+</span></span><span style="display:flex;"><span>    template <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;./unittests.db.template&#39;</span>  
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> Path(target)<span style="color:#f92672">.</span>is_file():  
+</span></span><span style="display:flex;"><span>        shutil<span style="color:#f92672">.</span>copy(template, target)
+</span></span></code></pre></div><ol start="2">
+<li>Test task dependency order
+<img src="airflow-test-task-order.png" alt=""></li>
+<li>Verify cross task communication data (<code>XCom</code>)</li>
+<li>Render Jinja templates in tasks and test them
+<img src="airflow-test-jinja-render.png" alt=""></li>
+</ol>
+</section><section>
+<h3 id="what-didnt-work">What didn&rsquo;t work</h3>
+</section><section>
+<h4 id="-tests-were-slow-due-to-dagbag-loading">⚠️ Tests were slow due to DagBag loading</h4>
+<ul>
+<li>Every test loads the DagBag again.</li>
+<li>Every DagBag instance scans for DAGs and loads them</li>
+<li>This takes 2-3 seconds</li>
+</ul>
+</section><section>
+<h4 id="-large-number-tests-existed-in-the-repo">⚠️ Large number tests existed in the repo</h4>
+<ul>
+<li>Over 1000 tests in a repository took 3-5 minutes to run</li>
+<li>Start using <code>pytest-xdist</code> for parallelism</li>
+<li>Shared DagBag state breaks tests</li>
+<li>🟢 Create cache burst policy (<code>dag_bag_instance_key</code>)</li>
+</ul>
+</section><section>
+<h5 id="the-solution">The solution</h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="nohighlight" data-noescape><span style="display:flex;"><span><span style="color:#a6e22e">@lru_cache</span>()
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">dag_bag</span>(dag_bag_instance_key: Optional[str] <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>) <span style="color:#f92672">-&gt;</span> DagBag:  
+</span></span><span style="display:flex;"><span>    path_to_read_dags <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;./dags&#39;</span>  
+</span></span><span style="display:flex;"><span>    logging<span style="color:#f92672">.</span>debug(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#39;Fetching DagBag for config key </span><span style="color:#e6db74">{</span>dag_bag_instance_key<span style="color:#e6db74">}</span><span style="color:#e6db74"> from path </span><span style="color:#e6db74">{</span>path_to_read_dags<span style="color:#e6db74">}</span><span style="color:#e6db74">&#39;</span>)  
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> DagBag(  
+</span></span><span style="display:flex;"><span>        dag_folder<span style="color:#f92672">=</span>path_to_read_dags,  
+</span></span><span style="display:flex;"><span>        include_examples<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>,  
+</span></span><span style="display:flex;"><span>        store_serialized_dags<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>  
+</span></span><span style="display:flex;"><span>    )
+</span></span></code></pre></div></section><section>
+<h4 id="-airflow-ui-is-slow--s3-cost-is-high">⚠️ Airflow UI is slow / S3 cost is high</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="nohighlight" data-noescape><span style="display:flex;"><span><span style="color:#66d9ef">with</span> DAG(dag_id<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;demo&#34;</span>, start_date<span style="color:#f92672">=</span>datetime(<span style="color:#ae81ff">2022</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>), schedule<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;0 0 * * *&#34;</span>) <span style="color:#66d9ef">as</span> dag:
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e"># DAG code here</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># this code is run during DAG load</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> boto3
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>bucket <span style="color:#f92672">=</span> boto3<span style="color:#f92672">.</span>Session()<span style="color:#f92672">.</span>resource(<span style="color:#e6db74">&#39;s3&#39;</span>) \
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">.</span>Bucket(<span style="color:#e6db74">&#39;sample-bucket&#39;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> bucket_object <span style="color:#f92672">in</span> bucket<span style="color:#f92672">.</span>objects<span style="color:#f92672">.</span>all():
+</span></span><span style="display:flex;"><span>    print(bucket_object<span style="color:#f92672">.</span>key)
+</span></span></code></pre></div></section><section>
+<h5 id="the-solution-1">The solution</h5>
+<ol>
+<li>identify slow tests</li>
+<li>trace down to DAG load</li>
+<li>identify slower DAGs</li>
+<li>🟢 delay the function execution to the DAG run phase using Jinja</li>
+</ol>
+</section><section>
+<h3 id="the-result">The result</h3>
+<p>Over 2000 tests in less than a minute!</p>
+<h2 id="kanazawa-cherry-blossompng"><img src="kanazawa-cherry-blossom.png" alt=""></h2>
+<h2 id="airflow-upgrade-to-v11015">Airflow upgrade to v1.10.15</h2>
+<ul>
+<li>DB schemas change and all hell breaks loose</li>
+<li>Automating this required understanding how Airflow runs migrations</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="nohighlight" data-noescape><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">pytest_configure</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">None</span>:  
+</span></span><span style="display:flex;"><span>    target <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;./unittests.db&#39;</span>  
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> Path(target)<span style="color:#f92672">.</span>is_file():  
+</span></span><span style="display:flex;"><span>        db<span style="color:#f92672">.</span>resetdb(rbac<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span></code></pre></div></section><section>
+<h2 id="airflow-upgrade-to-v200">Airflow upgrade to v2.0.0</h2>
+</section><section>
+<h3 id="the-ports-hack">The &ldquo;ports&rdquo; hack</h3>
+<p>TODO: add code</p>
+</section><section>
+<h3 id="airflows-internal-db-structure-changes">Airflow’s internal DB structure changes</h3>
+<p>TODO: add code</p>
+</section><section>
+<h3 id="relative-paths-for-dbs-dont-work">Relative paths for DBs don&rsquo;t work</h3>
+<p>Annoying, but can be addressed
+TODO: add code</p>
+</section><section>
+<h3 id="disable-parallel-tests">Disable parallel tests</h3>
+<p>TODO: add code explanation
+😱</p>
+</section><section>
+<h2 id="current-state">Current state</h2>
+<p>Single migration + Multiple DBs = Parallel test bliss</p>
+<p>TODO: add code</p>
+</section><section>
+<h2 id="future-state">Future state</h2>
+</section><section>
+<h3 id="auto-detect-test-groups-by-system-state">Auto-detect test groups by system state</h3>
+<p>TODO: add code to show why this will help</p>
+</section><section>
+<h1 id="thank-you">Thank you!</h1>
+<h2 id="questions">Questions?</h2>
+<p><a href="https://karun.me">Karun Japhet</a> | <a href="https://twitter.com/javatarz">@javatarz</a>
+<img src="sahaj-logo-white-grey.svg" alt="Sahaj Logo"></p>
+</section>
+
+  
+
+
+</div>
+      
+
+    </div>
+<script type="text/javascript" src=/reveal-hugo/object-assign.js></script>
+
+
+<script src="/reveal-js/dist/reveal.js"></script>
+
+
+  <script type="text/javascript" src="/reveal-js/plugin/markdown/markdown.js"></script>
+  
+  <script type="text/javascript" src="/reveal-js/plugin/highlight/highlight.js"></script>
+  
+  <script type="text/javascript" src="/reveal-js/plugin/zoom/zoom.js"></script>
+  
+  <script type="text/javascript" src="/reveal-js/plugin/notes/notes.js"></script>
+  
+<script type="text/javascript">
+  
+  
+  function camelize(map) {
+    if (map) {
+      Object.keys(map).forEach(function(k) {
+        newK = k.replace(/(\_\w)/g, function(m) { return m[1].toUpperCase() });
+        if (newK != k) {
+          map[newK] = map[k];
+          delete map[k];
+        }
+      });
+    }
+    return map;
+  }
+
+  var revealHugoDefaults = { center: true, controls: true, history: true, progress: true, transition: "slide" };
+  var revealHugoSiteParams = {};
+  var revealHugoPageParams = {"custom_theme":"reveal-hugo/themes/robot-lung.css","margin":0.2,"transition":"slide","transition_speed":"fast"};
+
+  var revealHugoPlugins = {
+    
+    plugins: [RevealMarkdown,RevealHighlight,RevealZoom,RevealNotes]
+  };
+
+  
+  var options = Object.assign({},
+    camelize(revealHugoDefaults),
+    camelize(revealHugoSiteParams),
+    camelize(revealHugoPageParams),
+    camelize(revealHugoPlugins));
+
+  Reveal.initialize(options);
+</script>
+
+
+
+
+
+  
+  
+
+  
+  
+
+  
+  
+
+  
+  
+
+
+
+
+
+    
+    
+  </body>
+</html>
