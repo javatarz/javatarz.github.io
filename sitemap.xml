@@ -2,12 +2,12 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://example.org/airflow-testing/</loc>
+    <loc>https://slides.karun.me/airflow-testing/</loc>
   </url><url>
-    <loc>https://example.org/categories/</loc>
+    <loc>https://slides.karun.me/categories/</loc>
   </url><url>
-    <loc>https://example.org/</loc>
+    <loc>https://slides.karun.me/</loc>
   </url><url>
-    <loc>https://example.org/tags/</loc>
+    <loc>https://slides.karun.me/tags/</loc>
   </url>
 </urlset>
