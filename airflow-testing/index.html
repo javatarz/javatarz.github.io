@@ -97,21 +97,22 @@
 </ul>
 </section><section>
 <h2 id="automating-airflow-tests">Automating airflow tests</h2>
-<ol>
-<li>Manually created database</li>
-</ol>
+</section><section>
+<h3 id="manually-created-database">Manually created database</h3>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="nohighlight" data-noescape><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">pytest_configure</span>() <span style="color:#f92672">-&gt;</span> <span style="color:#66d9ef">None</span>:  
 </span></span><span style="display:flex;"><span>    target <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;./unittests.db&#39;</span>  
 </span></span><span style="display:flex;"><span>    template <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;./unittests.db.template&#39;</span>  
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> Path(target)<span style="color:#f92672">.</span>is_file():  
 </span></span><span style="display:flex;"><span>        shutil<span style="color:#f92672">.</span>copy(template, target)
-</span></span></code></pre></div><ol start="2">
-<li>Test task dependency order
-<img src="airflow-test-task-order.png" alt=""></li>
-<li>Verify cross task communication data (<code>XCom</code>)</li>
-<li>Render Jinja templates in tasks and test them
-<img src="airflow-test-jinja-render.png" alt=""></li>
-</ol>
+</span></span></code></pre></div></section><section>
+<h3 id="test-task-dependency-order">Test task dependency order</h3>
+<p><img src="airflow-test-task-order.png" alt=""></p>
+</section><section>
+<h3 id="verify-cross-task-communication-data">Verify cross task communication data</h3>
+<p>TODO: code sample testing <code>XCom</code></p>
+</section><section>
+<h3 id="render-jinja-templates-in-tasks-and-test-them">Render Jinja templates in tasks and test them</h3>
+<p><img src="airflow-test-jinja-render.png" alt=""></p>
 </section><section>
 <h3 id="what-didnt-work">What didn&rsquo;t work</h3>
 </section><section>
